@@ -1,0 +1,40 @@
+{
+  "project_info": {
+    "project_number": "6699477875",
+    "firebase_url": "https://simplear.firebaseio.com",
+    "project_id": "simplear",
+    "storage_bucket": "simplear.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:6699477875:android:af78be18c07d4fcf",
+        "android_client_info": {
+          "package_name": "pe.edu.unsa.simplear.viewer"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "6699477875-pquob3qlh9qo1g9vlf0h2i7ss3kitc9i.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCwm-ml4TNTZx2UgaQCcLHaNeYKBBwig4w"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "6699477875-pquob3qlh9qo1g9vlf0h2i7ss3kitc9i.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
