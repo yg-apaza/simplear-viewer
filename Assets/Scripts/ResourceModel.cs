@@ -1,4 +1,5 @@
-﻿[System.Serializable]
+﻿using Firebase.Database;
+
 public class ResourceModel
 {
     public string id;
@@ -14,5 +15,15 @@ public class ResourceModel
         this.content = content;
         this.thumbnail = thumbnail;
         this.type = type;
+    }
+
+    public static ResourceModel FromDataSnapshot(DataSnapshot snapshot) {
+        string id = (string)snapshot.Child("id").Value;
+        string name = (string)snapshot.Child("name").Value;
+        string content = (string)snapshot.Child("content").Value;
+        string thumbnail = (string)snapshot.Child("thumbnail").Value;
+        string type = (string)snapshot.Child("type").Value;
+
+        return new ResourceModel(id, name, content, thumbnail, type);
     }
 }

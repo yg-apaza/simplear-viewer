@@ -2,9 +2,9 @@
 public class ActionModel
 {
     public string type;
-    public object[] inputs;
+    public string[] inputs;
 
-    public ActionModel(string type, object[] inputs)
+    public ActionModel(string type, string[] inputs)
     {
         this.type = type;
         this.inputs = inputs;
