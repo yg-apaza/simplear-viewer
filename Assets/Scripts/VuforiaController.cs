@@ -1,6 +1,8 @@
 ﻿using Firebase;
 using Firebase.Database;
 using Firebase.Unity.Editor;
+using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using UnityEngine;
@@ -11,8 +13,10 @@ using Vuforia;
 public class VuforiaController : MonoBehaviour {
 
     private DatabaseReference componentsReference;
-    private Dictionary<string, TrackableBehaviour> predefinedNaturalMarkers = new Dictionary<string, TrackableBehaviour>();
-    private Dictionary<string, ComponentModel> components = new Dictionary<string, ComponentModel>();
+    private Dictionary<string, TrackableBehaviour> inactiveMarkers = new Dictionary<string, TrackableBehaviour>();
+    private static Dictionary<string, GameObject> markers = new Dictionary<string, GameObject>();
+    private static Dictionary<string, GameObject> polys = new Dictionary<string, GameObject>();
+    //private Dictionary<string, ComponentModel> components = new Dictionary<string, ComponentModel>();
     public delegate void GetResourceCallback(GameObject resource);
 
     void Start() {
@@ -26,7 +30,6 @@ public class VuforiaController : MonoBehaviour {
     // Setup Vuforia markers before loading project
     private void SetupTrackables()
     {
-        Debug.Log("SetupTrackables*********");
         // TODO: Avoid to load all trackables
         ObjectTracker objectTracker = TrackerManager.Instance.GetTracker<ObjectTracker>();
         DataSet dataSet = objectTracker.CreateDataSet();
@@ -45,26 +48,23 @@ public class VuforiaController : MonoBehaviour {
 
             IEnumerable<TrackableBehaviour> tbs = TrackerManager.Instance.GetStateManager().GetTrackableBehaviours();
             foreach (TrackableBehaviour tb in tbs) {
-                Debug.Log("ADD TRACKACBLE" + tb.TrackableName);
-                predefinedNaturalMarkers.Add(tb.TrackableName, tb);
+                inactiveMarkers.Add(tb.TrackableName, tb);
             }
         }
     }
 
     // Read components from Firebase and apply their configuration
-    private void LoadComponents() {
-        Debug.Log("LoadComponents11111111*********");
+    private void LoadComponents()
+    {
         componentsReference.GetValueAsync().ContinueWith(task => {
             if (task.IsFaulted) {
                 // TODO: Handle the error...
             } else if (task.IsCompleted) {
                 // TODO: Load trackables only if Vuforia markers are going to be used
-                Debug.Log("LoadComponents2222222222222*********");
                 DataSnapshot snapshot = task.Result;
                 foreach (DataSnapshot componentSnapshot in snapshot.Children) {
                     ComponentModel component = ComponentModel.FromDataSnapshot(componentSnapshot);
-                    components.Add(componentSnapshot.Key, component);
-
+                    //components.Add(componentSnapshot.Key, component);
                     switch(component.type) {
                         case "augment_marker":
                             LoadComponent_AugmentMarker(component);
@@ -82,8 +82,17 @@ public class VuforiaController : MonoBehaviour {
     {
         CreateResource(component.inputs[1], polyGameObject => {
             CreateResource(component.inputs[0], markerGameObject => {
+
+                // Augment Poly 3D Model over marker
                 polyGameObject.SetActive(true);
                 polyGameObject.transform.parent = markerGameObject.transform;
+                if (component.configuration.touch_poly != null)
+                {
+                    // TODO: Send only component
+                    TouchPoly tp = polyGameObject.AddComponent<TouchPoly>();
+                    tp.component = component;
+                    tp.actions = component.configuration.touch_poly;
+                }
             });
         });
     }
@@ -106,11 +115,12 @@ public class VuforiaController : MonoBehaviour {
 
     private void CreateResource_Marker(ResourceModel resource, GetResourceCallback callback)
     {
-        TrackableBehaviour tb = predefinedNaturalMarkers[resource.content];        
-        tb.gameObject.name = "DynamicImageTarget-" + tb.TrackableName;
+        TrackableBehaviour tb = inactiveMarkers[resource.content];
+        tb.gameObject.name = resource.name;
         tb.gameObject.AddComponent<DefaultTrackableEventHandler>();
         tb.gameObject.AddComponent<TurnOffBehaviour>();
         //tb.GetComponent<DefaultTrackableEventHandler>().OnTrackableStateChanged(TrackableBehaviour.Status.TRACKED, TrackableBehaviour.Status.NO_POSE);
+        markers.Add(tb.gameObject.name, tb.gameObject);
         callback(tb.gameObject);
     }
 
@@ -118,7 +128,61 @@ public class VuforiaController : MonoBehaviour {
     {
         PolyUtil.GetPolyResult(resource.content, (polyResult) =>
         {
+            polyResult.name = resource.name;
+            polys.Add(polyResult.name, polyResult);
             callback(polyResult);
         });
+    }
+
+    public static IEnumerator DoActions(ComponentModel component, ActionModel[] actions)
+    {
+        GameObject marker = markers[component.inputs[0].name];
+        GameObject poly = polys[component.inputs[1].name];
+        
+        foreach (ActionModel action in actions)
+        {
+            switch (action.type)
+            {
+                case "rotation":
+                    int angle = Int32.Parse(action.inputs[0]);
+                    char axis = action.inputs[1][0];
+                    bool direction = action.inputs[2].Equals("clock") ? true : false;
+                    Rotate(poly, angle, axis, direction);
+                    break;
+                default:
+                    break;
+            }
+            yield return new WaitForSeconds(0.5f);
+        }
+    }
+
+    private static void Rotate(GameObject gameObject, int angle, char axis, bool direction)
+    {
+        if(axis == 'x' && direction)
+        {
+            gameObject.transform.Rotate(Vector3.left * angle);
+        }
+        else if (axis == 'x' && !direction)
+        {
+            gameObject.transform.Rotate(Vector3.right * angle);
+        }
+        else if (axis == 'y' && direction)
+        {
+            gameObject.transform.Rotate(Vector3.up * angle);
+        }
+        else if (axis == 'y' && !direction)
+        {
+            gameObject.transform.Rotate(Vector3.down * angle);
+        }
+        else if (axis == 'z' && direction)
+        {
+            gameObject.transform.Rotate(Vector3.forward * angle);
+        }
+        else if (axis == 'z' && !direction)
+        {
+            gameObject.transform.Rotate(Vector3.back * angle);
+        }
+
+        
     }
 }

@@ -1,11 +1,11 @@
 ﻿public class Configuration {
-    public ActionModel[] touch_resource;
+    public ActionModel[] touch_poly;
 
     public Configuration() {
-        this.touch_resource = null;
+        this.touch_poly = null;
     }
 
-    public Configuration(ActionModel[] touch_resource) {
-        this.touch_resource = touch_resource;
+    public Configuration(ActionModel[] touch_poly) {
+        this.touch_poly = touch_poly;
     }
 }
