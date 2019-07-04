@@ -2,6 +2,7 @@
 using Firebase.Database;
 using Firebase.Unity.Editor;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using UnityEngine;
 using Vuforia;
 
@@ -12,6 +13,7 @@ public class VuforiaController : MonoBehaviour {
     private DatabaseReference componentsReference;
     private Dictionary<string, TrackableBehaviour> predefinedNaturalMarkers = new Dictionary<string, TrackableBehaviour>();
     private Dictionary<string, ComponentModel> components = new Dictionary<string, ComponentModel>();
+    public delegate void GetResourceCallback(GameObject resource);
 
     void Start() {
         // TODO: The Firebase Unity SDK for Android requires Google Play services, which must be up-to-date before the SDK can be used.
@@ -73,53 +75,50 @@ public class VuforiaController : MonoBehaviour {
                 }
 
             }
-        });
+        }, TaskScheduler.FromCurrentSynchronizationContext());
     }
 
     private void LoadComponent_AugmentMarker(ComponentModel component)
     {
-        CreateResource(component.inputs[0]);
-        //CreateResource(component.inputs[1]);
+        CreateResource(component.inputs[1], polyGameObject => {
+            CreateResource(component.inputs[0], markerGameObject => {
+                polyGameObject.SetActive(true);
+                polyGameObject.transform.parent = markerGameObject.transform;
+            });
+        });
     }
 
-    private GameObject CreateResource(ResourceModel resource)
+    private void CreateResource(ResourceModel resource, GetResourceCallback callback)
     {
         // TODO: Use static strings or enums
         switch (resource.type)
         {
             case "marker":
-                return CreateResource_Marker(resource);
+                CreateResource_Marker(resource, callback);
+                break;
             case "poly":
-                return CreateResource_Poly(resource);
+                CreateResource_Poly(resource, callback);
+                break;
             default:
-                return null;
+                break;
         }
     }
 
-    private GameObject CreateResource_Marker(ResourceModel resource)
+    private void CreateResource_Marker(ResourceModel resource, GetResourceCallback callback)
     {
-        Debug.Log("CREATE RESOURCE MARKERS");
-        Debug.Log(resource.content);
-        Debug.Log(predefinedNaturalMarkers.Count);
-        TrackableBehaviour tb = predefinedNaturalMarkers[resource.content];
-        Debug.Log("PASEEEEEEEEEEEEEEEEEEEE");
-        Debug.Log(tb.gameObject);
-        
-        //tb.gameObject.name = "DynamicImageTarget-" + tb.TrackableName;
-        //tb.gameObject.AddComponent<DefaultTrackableEventHandler>();
-        //tb.gameObject.AddComponent<TurnOffBehaviour>();
-        Debug.Log("WAAAAAAAAAAAAAAAAAAAAAAAAAAAA");
-        return null;
-        //resources.Add(resource.id, resource);
-        //gameObjectresources.Add(resource.id, tb.gameObject);
+        TrackableBehaviour tb = predefinedNaturalMarkers[resource.content];        
+        tb.gameObject.name = "DynamicImageTarget-" + tb.TrackableName;
+        tb.gameObject.AddComponent<DefaultTrackableEventHandler>();
+        tb.gameObject.AddComponent<TurnOffBehaviour>();
+        //tb.GetComponent<DefaultTrackableEventHandler>().OnTrackableStateChanged(TrackableBehaviour.Status.TRACKED, TrackableBehaviour.Status.NO_POSE);
+        callback(tb.gameObject);
     }
 
-    private GameObject CreateResource_Poly(ResourceModel resource)
+    private void CreateResource_Poly(ResourceModel resource, GetResourceCallback callback)
     {
         PolyUtil.GetPolyResult(resource.content, (polyResult) =>
         {
-            //return polyResult;
+            callback(polyResult);
         });
-        return null;
     }
 }

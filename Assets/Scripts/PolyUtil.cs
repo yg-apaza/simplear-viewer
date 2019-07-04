@@ -1,16 +1,15 @@
 ﻿using PolyToolkit;
 using UnityEngine;
+using static VuforiaController;
 
 public class PolyUtil
 {
-    public delegate void GetPolyResultCallback(GameObject asset);
-
-    public static void GetPolyResult(string assetId, GetPolyResultCallback callback)
+    public static void GetPolyResult(string assetId, GetResourceCallback callback)
     {
         PolyApi.GetAsset("assets/" + assetId, (getAssetResult) => GetAssetCallback(getAssetResult, callback));
     }
 
-    private static void GetAssetCallback(PolyStatusOr<PolyAsset> getAssetResult, GetPolyResultCallback callback)
+    private static void GetAssetCallback(PolyStatusOr<PolyAsset> getAssetResult, GetResourceCallback callback)
     {
         if (!getAssetResult.Ok)
         {
@@ -26,7 +25,7 @@ public class PolyUtil
         PolyApi.Import(getAssetResult.Value, options, (asset, importResult) => ImportAssetCallback(asset, importResult, callback));
     }
 
-    private static void ImportAssetCallback(PolyAsset asset, PolyStatusOr<PolyImportResult> result, GetPolyResultCallback callback)
+    private static void ImportAssetCallback(PolyAsset asset, PolyStatusOr<PolyImportResult> result, GetResourceCallback callback)
     {
         if (!result.Ok)
         {
