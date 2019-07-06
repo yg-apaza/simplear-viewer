@@ -39,7 +39,8 @@ public class PolyUtil
         polyResult.transform.position = new Vector3(0f, 0f, 0f);
         polyResult.transform.rotation = Quaternion.Euler(0, 0, 0);
         polyResult.transform.localScale = new Vector3(500f, 500f, 500f);
-        Debug.Log(">> POLY RESOURCE CREATED > " + asset.name);
+        polyResult.AddComponent<CapsuleCollider>();
+        polyResult.GetComponent<CapsuleCollider>().radius = 1;
         callback(polyResult);
     }
 }
